@@ -1,36 +1,180 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bot Império — Assistente Interno
 
-## Getting Started
+Chatbot da **Império dos Rastreadores** com chat web e **WhatsApp via QR Code** (Evolution API — gratuito).
 
-First, run the development server:
+## O que você precisa
+
+| Serviço | Custo | Função |
+|---------|-------|--------|
+| [GitHub](https://github.com/tiimperiodosrastreadores-collab/botimperio) | Grátis | Código |
+| [Vercel](https://vercel.com) | Grátis | Chat web online |
+| [Render](https://render.com) | Grátis | Evolution API (QR Code do Zap) |
+| [OpenAI](https://platform.openai.com) | Pago por uso | Inteligência do bot |
+| Docker Desktop | Grátis | Testar Zap localmente |
+
+---
+
+## Passo a passo completo
+
+### PASSO 1 — Subir código no GitHub
+
+O repositório já está em: https://github.com/tiimperiodosrastreadores-collab/botimperio
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git init
+git add .
+git commit -m "Bot Império com WhatsApp QR Code"
+git branch -M main
+git remote add origin https://github.com/tiimperiodosrastreadores-collab/botimperio.git
+git push -u origin main
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### PASSO 2 — Deploy do chat na Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Acesse [vercel.com/new](https://vercel.com/new)
+2. Importe o repositório `botimperio`
+3. Em **Environment Variables**, adicione:
 
-## Learn More
+| Variável | Valor |
+|----------|--------|
+| `OPENAI_API_KEY` | sua chave OpenAI |
+| `OPENAI_ASSISTANT_ID` | ID do assistente |
+| `INTERNAL_PASSWORD` | senha da equipe |
+| `NEXT_PUBLIC_APP_URL` | `https://seu-projeto.vercel.app` |
+| `EVOLUTION_API_URL` | URL do Render (passo 3) |
+| `EVOLUTION_API_KEY` | `imperio2025api` |
+| `EVOLUTION_INSTANCE_NAME` | `botimperio` |
 
-To learn more about Next.js, take a look at the following resources:
+4. Clique em **Deploy**
+5. Teste: `https://seu-projeto.vercel.app` → login com a senha
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### PASSO 3 — Evolution API no Render (QR Code grátis)
 
-## Deploy on Vercel
+A Evolution API mantém a conexão com o WhatsApp. Ela **não roda na Vercel** — vai no Render.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Crie conta em [render.com](https://render.com)
+2. **New → Web Service**
+3. Escolha **Deploy an existing image from a Docker registry**
+4. Preencha:
+   - **Image URL:** `atendai/evolution-api:v2.2.3`
+   - **Name:** `evolution-botimperio`
+   - **Plan:** Free
+5. Em **Environment Variables**:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Variável | Valor |
+|----------|--------|
+| `AUTHENTICATION_API_KEY` | `imperio2025api` |
+| `SERVER_URL` | `https://evolution-botimperio.onrender.com` (sua URL do Render) |
+| `DEL_INSTANCE` | `false` |
+
+6. Em **Disk**, adicione um disco persistente (1 GB) — importante para não perder a sessão do Zap
+7. **Deploy**
+
+Anote a URL do Render (ex: `https://evolution-botimperio.onrender.com`) e coloque na Vercel em `EVOLUTION_API_URL`.
+
+---
+
+### PASSO 4 — Conectar o WhatsApp (QR Code)
+
+1. Acesse o chat web: `https://seu-projeto.vercel.app`
+2. Faça login
+3. Clique em **WhatsApp** no topo (ou acesse `/admin/whatsapp`)
+4. Aparece o **QR Code**
+5. No celular:
+   - Abra o **WhatsApp**
+   - **Menu (⋮) → Aparelhos conectados → Conectar aparelho**
+   - Escaneie o QR Code
+6. Quando conectar, a tela mostra **WhatsApp conectado!**
+
+Pronto — mensagens enviadas para esse número serão respondidas pelo bot.
+
+---
+
+### PASSO 5 — Testar
+
+Mande uma mensagem de outro celular para o número conectado:
+
+> "Qual configuração do LV-12 4G interno?"
+
+O bot deve responder com os comandos SMS formatados.
+
+---
+
+## Testar tudo no seu PC (antes de subir)
+
+### 1. Instalar Docker Desktop
+
+Baixe em [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/)
+
+### 2. Subir a Evolution API
+
+```bash
+docker compose up -d
+```
+
+### 3. Subir o bot
+
+```bash
+npm install
+npm run dev
+```
+
+### 4. Conectar o Zap
+
+1. Acesse http://localhost:3000
+2. Login: `imperio2025`
+3. Clique em **WhatsApp**
+4. Escaneie o QR Code
+
+> Para webhook local funcionar com mensagens recebidas, use [ngrok](https://ngrok.com) apontando para a porta 3000 e atualize `NEXT_PUBLIC_APP_URL` no `.env.local`.
+
+---
+
+## Como alimentar o bot
+
+Edite arquivos em `knowledge/`:
+
+```
+knowledge/
+├── assistente-rastreadores.md
+├── faq.md
+├── processos.md
+└── politicas.md
+```
+
+Faça commit e a Vercel redeploya automaticamente.
+
+---
+
+## Estrutura
+
+```
+app/
+├── admin/whatsapp/       # Tela do QR Code
+├── api/whatsapp/
+│   ├── webhook/          # Recebe mensagens do Zap
+│   ├── qrcode/           # Gera QR Code
+│   ├── status/           # Status da conexão
+│   └── restart/          # Reconectar / desconectar
+├── api/chat/             # Chat web
+└── login/
+lib/
+├── evolution.ts          # Integração WhatsApp QR
+├── openai.ts
+├── persona.ts
+└── rag.ts
+docker-compose.yml        # Evolution API local
+```
+
+---
+
+## Segurança
+
+- Não commite `.env.local`
+- Use `WHATSAPP_ALLOWED_NUMBERS` para limitar quem o bot responde
+- O chat web exige senha interna
+- WhatsApp via QR é para uso interno — evite spam para não ser bloqueado
