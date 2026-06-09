@@ -4,7 +4,8 @@ services:
     runtime: image
     plan: free
     image:
-      url: docker.io/atendai/evolution-api:v2.2.3
+      url: docker.io/atendai/evolution-api:v2.1.1
+    healthCheckPath: /
     envVars:
       - key: AUTHENTICATION_API_KEY
         value: imperio2025api
@@ -12,3 +13,11 @@ services:
         value: "false"
       - key: SERVER_URL
         sync: false
+      - key: SERVER_PORT
+        value: "10000"
+      - key: DATABASE_ENABLED
+        value: "false"
+      - key: CACHE_REDIS_ENABLED
+        value: "false"
+      - key: CACHE_LOCAL_ENABLED
+        value: "true"
