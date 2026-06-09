@@ -12,7 +12,3 @@ services:
         value: "false"
       - key: SERVER_URL
         sync: false
-    disk:
-      name: evolution-data
-      mountPath: /evolution/instances
-      sizeGB: 1
