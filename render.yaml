@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: evolution-botimperio
+    runtime: image
+    plan: free
+    image:
+      url: docker.io/atendai/evolution-api:v2.2.3
+    envVars:
+      - key: AUTHENTICATION_API_KEY
+        value: imperio2025api
+      - key: DEL_INSTANCE
+        value: "false"
+      - key: SERVER_URL
+        sync: false
+    disk:
+      name: evolution-data
+      mountPath: /evolution/instances
+      sizeGB: 1

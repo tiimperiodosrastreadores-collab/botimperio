@@ -97,6 +97,12 @@ export default function Chat() {
           </div>
           <div className="flex gap-2">
             <Link
+              href="/admin/knowledge"
+              className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
+            >
+              Conhecimento
+            </Link>
+            <Link
               href="/admin/whatsapp"
               className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
             >

@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { listKnowledgeFiles, readKnowledgeContent } from "./knowledge-store";
 
 export interface KnowledgeChunk {
   source: string;
@@ -30,45 +31,74 @@ function splitIntoChunks(content: string, source: string): KnowledgeChunk[] {
   return sections.map((section) => ({ source, content: section }));
 }
 
-function loadFilesFromDir(dir: string): KnowledgeChunk[] {
-  if (!fs.existsSync(dir)) return [];
+function loadBuiltinFromDisk(): KnowledgeChunk[] {
+  const knowledgeDir = path.join(process.cwd(), "knowledge");
+  if (!fs.existsSync(knowledgeDir)) return [];
 
   const chunks: KnowledgeChunk[] = [];
 
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const fullPath = path.join(dir, entry.name);
+  function walk(dir: string) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
 
-    if (entry.isDirectory()) {
-      chunks.push(...loadFilesFromDir(fullPath));
-      continue;
+      if (entry.isDirectory()) {
+        if (entry.name === "uploads") continue;
+        walk(fullPath);
+        continue;
+      }
+
+      const ext = path.extname(entry.name).toLowerCase();
+      if (!SUPPORTED_EXTENSIONS.includes(ext)) continue;
+
+      const content = fs.readFileSync(fullPath, "utf-8");
+      const source = path.relative(knowledgeDir, fullPath).split(path.sep).join("/");
+      chunks.push(...splitIntoChunks(content, source));
     }
-
-    const ext = path.extname(entry.name).toLowerCase();
-    if (!SUPPORTED_EXTENSIONS.includes(ext)) continue;
-
-    const content = fs.readFileSync(fullPath, "utf-8");
-    const source = path.relative(path.join(process.cwd(), "knowledge"), fullPath);
-    chunks.push(...splitIntoChunks(content, source));
   }
 
+  walk(knowledgeDir);
   return chunks;
 }
 
 let cachedChunks: KnowledgeChunk[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL_MS = 30_000;
 
-export function loadKnowledge(): KnowledgeChunk[] {
-  if (cachedChunks) return cachedChunks;
+export function clearKnowledgeCache(): void {
+  cachedChunks = null;
+  cacheTimestamp = 0;
+}
 
-  const knowledgeDir = path.join(process.cwd(), "knowledge");
-  cachedChunks = loadFilesFromDir(knowledgeDir);
+export async function loadKnowledge(): Promise<KnowledgeChunk[]> {
+  const now = Date.now();
+  if (cachedChunks && now - cacheTimestamp < CACHE_TTL_MS) {
+    return cachedChunks;
+  }
+
+  const files = await listKnowledgeFiles();
+  const chunks: KnowledgeChunk[] = [];
+
+  for (const file of files) {
+    const content = await readKnowledgeContent(file.name);
+    if (!content?.trim()) continue;
+    chunks.push(...splitIntoChunks(content, file.name));
+  }
+
+  if (chunks.length === 0) {
+    cachedChunks = loadBuiltinFromDisk();
+  } else {
+    cachedChunks = chunks;
+  }
+
+  cacheTimestamp = now;
   return cachedChunks;
 }
 
-export function searchRelevantChunks(
+export async function searchRelevantChunks(
   query: string,
   topK = 5
-): KnowledgeChunk[] {
-  const chunks = loadKnowledge();
+): Promise<KnowledgeChunk[]> {
+  const chunks = await loadKnowledge();
   const queryTokens = new Set(tokenize(query));
 
   if (queryTokens.size === 0) return chunks.slice(0, topK);

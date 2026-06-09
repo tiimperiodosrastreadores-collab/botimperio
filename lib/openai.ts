@@ -51,9 +51,15 @@ async function generateWithAssistant(
     await setThreadId(channel, sessionId, threadId);
   }
 
+  const relevantChunks = await searchRelevantChunks(userMessage);
+  const context = buildContext(relevantChunks);
+  const messageWithContext = context.includes("Nenhum documento")
+    ? userMessage
+    : `[Base de conhecimento atualizada]\n${context}\n\n[Pergunta do colaborador]\n${userMessage}`;
+
   await client.beta.threads.messages.create(threadId, {
     role: "user",
-    content: userMessage,
+    content: messageWithContext,
   });
 
   const run = await client.beta.threads.runs.createAndPoll(threadId, {
@@ -87,7 +93,7 @@ async function generateWithChatCompletions(
   userMessage: string,
   history: { role: "user" | "assistant"; content: string }[]
 ): Promise<string> {
-  const relevantChunks = searchRelevantChunks(userMessage);
+  const relevantChunks = await searchRelevantChunks(userMessage);
   const context = buildContext(relevantChunks);
   const client = getClient();
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";

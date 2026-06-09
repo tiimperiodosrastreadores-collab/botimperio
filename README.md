@@ -2,6 +2,8 @@
 
 Chatbot da **Império dos Rastreadores** com chat web e **WhatsApp via QR Code** (Evolution API — gratuito).
 
+> **Comece aqui:** leia o [GUIA-RAPIDO.md](./GUIA-RAPIDO.md) — só 5 passos para colocar online.
+
 ## O que você precisa
 
 | Serviço | Custo | Função |
